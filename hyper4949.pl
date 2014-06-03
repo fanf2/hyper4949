@@ -45,4 +45,37 @@ for my $page (@pages) {
 
 $rfc = join "\n", @pages;
 
-print $rfc;
+my $entry = "\n   \$ ";
+my $entre = quotemeta $entry;
+
+$rfc =~ m{^
+  (.*\n)
+   \n4[.][ ]Definitions\n
+   $entre(.*\n)
+  (\n5[.][ ]Security[ ]Considerations\n
+   \n.*)
+}xs;
+
+my ($front,$defs,$back) = ($1,$2,$3);
+
+my @defs = split $entre, $defs;
+
+my %def;
+my @key;
+for my $def (@defs) {
+  # one-line cross-references
+  $def =~ s{^([^ \n]+) See: ([^\n]+)$}{$1\n$2};
+  # multiple keywords to a definition
+  if ($def =~ m{^[^\n]+$}) {
+    push @key, $def;
+    next;
+  }
+  die "$def" unless $def =~ m{^([^\n]+)\n(.*)$}s;
+  my ($key,$text) = ($1,$2);
+  $key =~ s{[(]trademark[)]}{™}g;
+  $key =~ s{[(]service mark[)]}{℠}g;
+  $def{$_} = $text for @key, $key;
+  undef @key;
+}
+
+print map "$_\n", sort keys %def;
