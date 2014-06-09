@@ -64,7 +64,7 @@ my %def;
 my @key;
 for my $def (@defs) {
   # one-line cross-references
-  $def =~ s{^([^ \n]+) See: ([^\n]+)$}{$1\n$2};
+  $def =~ s{^([^ \n]+) (See: [^\n]+)$}{$1\n$2};
   # multiple keywords to a definition
   if ($def =~ m{^[^\n]+$}) {
     push @key, $def;
@@ -74,7 +74,27 @@ for my $def (@defs) {
   my ($key,$text) = ($1,$2);
   $key =~ s{[(]trademark[)]}{™}g;
   $key =~ s{[(]service mark[)]}{℠}g;
-  $def{$_} = $text for @key, $key;
+  $key =~ s{, version \d}{};
+  $key =~ s{, Inc\.}{};
+  $key =~ s{\.$}{};
+  $key =~ s{^(.+) [(](algorithm) or (protocol)[)]$}{$1, $1 $2, $1 $3};
+  # acromyms at end
+  $key =~ s{ [(]([^()]+)[)]$}{, $1};
+  # acromyms in middle
+  $key =~ s{^(.+) [(]([^( )]+)[)] (.+)$}{$1 $3, $2 $3};
+  # avoid treating these as a list
+  $key =~ s{^(.+) [(]([^( )]+)[)], (.+)$}{$1, $3, $2};
+  # lists
+  $key =~ s{, or }{, };
+  if ($key =~ m{^([^,]+ )?((\w+, ){2,}\w+)( [^,]+)?$}) {
+    my ($pre,$suf) = ($1 || "", $4 || "");
+    push @key, map "$pre$_$suf", split m{, }, $2;
+  } elsif ($key =~ m{, }) {
+    push @key, split m{, }, $key;
+  } else {
+    push @key, $key;
+  }
+  $def{$_} = $text for @key;
   undef @key;
 }
 
