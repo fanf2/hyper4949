@@ -77,13 +77,16 @@ for my $def (@defs) {
   $key =~ s{, version \d}{};
   $key =~ s{, Inc\.}{};
   $key =~ s{\.$}{};
+  $key =~ s{"}{}g;
   $key =~ s{^(.+) [(](algorithm) or (protocol)[)]$}{$1, $1 $2, $1 $3};
+  $key = "$1 vs. $2" if $key =~ m{^([a-z]+), ([A-Z][a-z]+)$} and $1 eq lc $2;
   # acromyms at end
   $key =~ s{ [(]([^()]+)[)]$}{, $1};
   # acromyms in middle
   $key =~ s{^(.+) [(]([^( )]+)[)] (.+)$}{$1 $3, $2 $3};
   # avoid treating these as a list
   $key =~ s{^(.+) [(]([^( )]+)[)], (.+)$}{$1, $3, $2};
+  $key =~ s{^(.+), the ([^, ]+), }{$2, $1, };
   # lists
   $key =~ s{, or }{, };
   if ($key =~ m{^([^,]+ )?((\w+, ){2,}\w+)( [^,]+)?$}) {
