@@ -47,6 +47,7 @@ $rfc = join "\n", @pages;
 
 my $entry = "\n   \$ ";
 my $entre = quotemeta $entry;
+my $seere = qr{^ +(?:[(][A-Z][)])? See: };
 
 $rfc =~ m{^
   (.*\n)
@@ -61,6 +62,7 @@ my ($front,$defs,$back) = ($1,$2,$3);
 my @defs = split $entre, $defs;
 
 my %def;
+my %see;
 my @key;
 for my $def (@defs) {
   # one-line cross-references
@@ -97,8 +99,23 @@ for my $def (@defs) {
   } else {
     push @key, $key;
   }
-  $def{$_} = $text for @key;
+  if ($text =~ $seere) {
+    $see{$_} = $text for @key;
+  } else {
+    $def{$_} = $text for @key;
+  }
   undef @key;
 }
 
-print map "$_\n", sort keys %def;
+for (keys %see) {
+  die "bad see $_" unless
+    $see{$_} =~ m{$seere(.*?)[.]?[)]?$}s;
+  if (exists $def{$_} and
+      exists $def{$1} and
+      $def{$_} eq $def{$1}) {
+    print "xref $_\n";
+    next;
+  }
+}
+
+#print map "$_\n", sort keys %def;
